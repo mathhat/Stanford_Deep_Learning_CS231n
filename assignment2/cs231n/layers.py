@@ -594,11 +594,27 @@ def max_pool_forward_naive(x, pool_param):
       W' = 1 + (W - pool_width) / stride
     - cache: (x, pool_param)
     """
-    out = None
+    N, C, H, W = x.shape
+
+    h = pool_param['pool_height']
+    w = pool_param['pool_width']
+    stride =    pool_param['stride']
+    Hprime = 1 + (H - h) / stride
+    Wprime = 1 + (W - w) / stride
+
+    out = np.zeros((((N,C,Hprime,Wprime))))
     ###########################################################################
     # TODO: Implement the max-pooling forward pass                            #
     ###########################################################################
-    pass
+    for i in range(N):
+        for c in range(C):
+            for hprime in range(Hprime):
+                idy = hprime * stride 
+                idy2 = hprime * stride + h
+                for wprime in range(Wprime):
+                    idx = wprime * stride 
+                    idx2 = wprime * stride + w
+                    out[i,c,hprime,wprime] = np.max(x[i,c,idy:idy2,idx:idx2])
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
@@ -617,11 +633,31 @@ def max_pool_backward_naive(dout, cache):
     Returns:
     - dx: Gradient with respect to x
     """
-    dx = None
+    x,pool_param = cache
+    N, C, H, W = x.shape
+    N, C, Hprime, Wprime = dout.shape
+    h = pool_param['pool_height']
+    w = pool_param['pool_width']
+    stride =    pool_param['stride']
+
+    dx = np.zeros_like(x)
+    pool_window_zeros = np.zeros((h,w))
     ###########################################################################
     # TODO: Implement the max-pooling backward pass                           #
     ###########################################################################
-    pass
+    for i in range(N):
+        for c in range(C):
+            for hprime in range(Hprime):
+                idy = hprime * stride 
+                idy2 = hprime * stride + h
+                for wprime in range(Wprime):
+                    idx = wprime * stride 
+                    idx2 = wprime * stride + w
+                    ind = np.unravel_index(np.argmax(x[i,c,idy:idy2,idx:idx2]),[h,w])
+                    pool_window_zeros[ind] = 1
+                    dx[i,c,idy:idy2,idx:idx2] = pool_window_zeros*dout[i,c,hprime,wprime]
+                    pool_window_zeros[ind] *= 0
+
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
